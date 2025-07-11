@@ -1,22 +1,24 @@
-import Organization from "../../models/organization";
-import User from "../../models/user";
-import { createLog } from "../../utils/createLog";
-import getAuthUser from "../../utils/getAuthUser";
-import { hashPin } from "../../utils/hashPassword";
+import User from "@/app/api/models/user";
+import { createLog } from "@/app/api/utils/createLog";
+import getAuthUser from "@/app/api/utils/getAuthUser";
+import { hashPin } from "@/app/api/utils/hashPassword";
 import {
   sendBadRequestResponse,
   sendServerErrorResponse,
   sendSuccessResponse,
-} from "../../utils/responses";
+} from "@/app/api/utils/responses";
 
 export const POST = async (req) => {
   try {
     const user = await getAuthUser(req);
     if (!user) return sendBadRequestResponse("unauthenticated");
 
-    if (user.userType === "user") return sendBadRequestResponse("unauthorized");
+    if (user.userType !== "user") return sendBadRequestResponse("unauthorized");
 
-    const { firstName, lastName, email, permissions, password, organization } =
+    if (!user.organization)
+      return sendBadRequestResponse("User does not belong to any organization");
+
+    const { firstName, lastName, email, permissions, password } =
       await req.json();
 
     if (
@@ -25,7 +27,6 @@ export const POST = async (req) => {
       !email ||
       !password ||
       !permissions ||
-      !organization ||
       permissions.length === 0
     )
       return sendBadRequestResponse("Kindly fill all required fields");
@@ -39,10 +40,6 @@ export const POST = async (req) => {
         "Password cannot be less than 8 characters"
       );
 
-    const organizationValid = await Organization.findById(organization);
-    if (!organizationValid)
-      return sendBadRequestResponse("Invalid organization");
-
     const hashedPassword = await hashPin(String(password));
 
     await User.create({
@@ -51,7 +48,7 @@ export const POST = async (req) => {
       email,
       password: hashedPassword,
       permissions,
-      organization: organization,
+      organization: user.organization,
       userType: "employee",
     });
 
@@ -67,19 +64,21 @@ export const POST = async (req) => {
 export const GET = async (req) => {
   try {
     const user = await getAuthUser(req);
+
     if (!user) return sendBadRequestResponse("unauthenticated");
 
-    if (user.userType !== "admin")
-      return sendBadRequestResponse("unauthorized");
+    if (user.userType !== "user") return sendBadRequestResponse("unauthorized");
 
-    const employees = await User.find({ userType: "employee" })
-      .populate("organization", "name")
-      .sort({ createdAt: -1 });
+    if (!user.organization)
+      return sendSuccessResponse("Employees retrieved", []);
 
-    await createLog("Fetched Employees", user.id);
+    const employees = await User.find({ organization: user.organization });
 
-    return sendSuccessResponse("Organizations retrieved", employees);
+    await createLog("Fetched Employee", user.id);
+
+    return sendSuccessResponse("Employees retrieved", employees);
   } catch (error) {
+    console.error(error);
     return sendServerErrorResponse();
   }
 };

@@ -1,26 +1,45 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import useGet from "@/hooks/useGet";
+import { url } from "@/hooks/lib";
+import { FaSpinner } from "react-icons/fa";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const links = [
     { name: "Dashboard", href: "/organization" },
     { name: "Audit Log", href: "/organization/logs" },
   ];
+
+  const { data, isPending } = useGet(`${url}/v1/user`, "profile");
+
+  useEffect(() => {
+    if (isPending) return;
+    if (data?.data?.userType !== "user") return router.replace("/login");
+  }, [data?.data, router, isPending]);
+
+  if (isPending)
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <FaSpinner className="animate-spin" />
+      </div>
+    );
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex-shrink-0 text-xl font-bold text-blue-600">
-              OrgDash
+            <div className="flex-shrink-0 capitalize text-xl font-bold text-blue-600">
+              {data?.data?.organization?.name}
             </div>
 
             {/* Desktop nav */}

@@ -37,6 +37,7 @@ export default function EmployeesPage() {
               <thead className="bg-blue-100 border-b">
                 <tr>
                   <th className="text-left px-4 py-3">Name</th>
+                  <th className="text-left px-4 py-3">Email</th>
                   <th className="text-left px-4 py-3">ID</th>
                   <th className="text-left px-4 py-3">Created</th>
                   <th className="text-left px-4 py-3">Organization</th>
@@ -52,6 +53,7 @@ export default function EmployeesPage() {
                     <td className="px-4 py-3 capitalize">
                       {emp.firstName} {emp.lastName}
                     </td>
+                    <td className="px-4 py-3">{emp?.email}</td>
                     <td className="px-4 py-3">{emp.id}</td>
                     <td className="px-4 py-3">
                       {new Date(emp.createdAt).toLocaleDateString()}

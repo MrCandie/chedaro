@@ -6,7 +6,7 @@ import { url } from "@/hooks/lib";
 import { Fragment, useState } from "react";
 import ConfirmActionModal from "@/components/ConfirmActionModal";
 import { useDelete } from "@/hooks/useDelete";
-import UpdatePermissions from "../_components/UpdatePermisssions";
+import UpdatePermissions from "@/app/(auth)/admin/employees/_components/UpdatePermisssions";
 
 export default function ViewEmployeePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);

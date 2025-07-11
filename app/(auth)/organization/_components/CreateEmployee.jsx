@@ -9,7 +9,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import z from "zod";
 import { ImSpinner10 } from "react-icons/im";
-import useGet from "@/hooks/useGet";
 
 const allPermissions = [
   "create_employee",
@@ -23,10 +22,6 @@ const allPermissions = [
 const schema = z.object({
   firstName: z.string().min(1, { message: "First name is required" }).trim(),
   lastName: z.string().min(1, { message: "Last name is required" }).trim(),
-  organization: z
-    .string()
-    .min(1, { message: "Organization is required" })
-    .trim(),
   email: z.string().email("Invalid email").trim(),
   password: z.string().min(6, { message: "Minimum 6 characters" }),
   permissions: z.array(z.string()).optional(),
@@ -45,16 +40,6 @@ export default function CreateEmployee({ setShowModal }) {
     },
   });
 
-  const { data, isPending } = useGet(
-    `${url}/v1/organizations`,
-    "organizations-list"
-  );
-
-  const orgs =
-    data?.data?.organizations?.map((el) => {
-      return { value: el.id, label: el.name };
-    }) || [];
-
   const handleSuccess = async () => {
     toast.success("Employee created");
     reset();
@@ -62,8 +47,8 @@ export default function CreateEmployee({ setShowModal }) {
   };
 
   const createHandler = usePost({
-    url: `${url}/v1/employee`,
-    queryKey: "employee",
+    url: `${url}/v1/organizations/employees`,
+    queryKey: "organization-employee",
     title: "Employee created",
     onSuccess: handleSuccess,
   });
@@ -108,15 +93,6 @@ export default function CreateEmployee({ setShowModal }) {
             placeholder="Password"
             register={register}
             info={errors.password?.message}
-          />
-
-          <Input
-            label="Organization"
-            name="organization"
-            options={orgs || []}
-            register={register}
-            info={errors.organization?.message}
-            inputType="select"
           />
 
           {/* Permissions */}

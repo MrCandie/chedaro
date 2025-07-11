@@ -2,14 +2,12 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useAuth } from "../context/auth";
 import { toast } from "react-toastify";
 
-const deleteData = async ({ url, message, token, logout }) => {
+const deleteData = async ({ url, message }) => {
   const headers = {
     Accept: "application/json",
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   };
 
   try {
@@ -17,12 +15,8 @@ const deleteData = async ({ url, message, token, logout }) => {
     toast.success(message);
     return data;
   } catch (error) {
-    const statusCode = error.response?.status || 500; // Default to 500 if no status is available
+    const statusCode = error.response?.status || 500;
     const errorBody = error.response?.data?.message || "Something went wrong";
-
-    const messages = ["unauthenticated", "authentication failed"];
-
-    if (messages.includes(errorBody.toLowerCase())) logout();
 
     let message;
     if (typeof errorBody !== "string") {
@@ -31,24 +25,21 @@ const deleteData = async ({ url, message, token, logout }) => {
       message = errorBody;
     }
 
-    // Show an error toast
     toast.error(message);
 
-    // Throw an error with both statusCode and message for external handling
     const customError = new Error(errorBody);
-    customError.statusCode = statusCode; // Attach statusCode to the error object
+    customError.statusCode = statusCode;
     throw customError;
   }
 };
 
 export const useDelete = ({ queryKey, url, title, onSuccess }) => {
-  const { token, logout } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => deleteData({ url, title, token, logout }), // Pass showToast to the mutation function
+    mutationFn: () => deleteData({ url, title }),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: [queryKey] }); // Invalidate related queries on success
+      queryClient.invalidateQueries({ queryKey: [queryKey] });
 
       if (onSuccess) onSuccess(data, variables);
     },

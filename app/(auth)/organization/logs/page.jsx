@@ -1,6 +1,8 @@
 "use client";
 
+import useGet from "@/hooks/useGet";
 import { useEffect, useState } from "react";
+import { url } from "@/hooks/lib";
 
 // Mock logs
 const mockAuditLogs = [
@@ -36,6 +38,14 @@ const orgMap = {
 export default function AuditLogPage() {
   const [logs, setLogs] = useState([]);
 
+  const { data, isPending } = useGet(
+    `${url}/v1/organizations/logs`,
+    "organizations-logs"
+  );
+
+  const result = data?.data;
+  console.log(result);
+
   useEffect(() => {
     // Simulate fetch from API/localStorage
     setLogs(mockAuditLogs);
@@ -46,7 +56,7 @@ export default function AuditLogPage() {
       <h1 className="text-2xl font-bold mb-6">Audit Trail</h1>
 
       <div className="overflow-x-auto bg-white rounded shadow">
-        {logs.length === 0 ? (
+        {result?.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             No logs available.
           </div>
@@ -55,24 +65,22 @@ export default function AuditLogPage() {
             <thead className="bg-gray-100 border-b">
               <tr>
                 <th className="text-left px-4 py-3">Timestamp</th>
-                <th className="text-left px-4 py-3">Actor</th>
-                <th className="text-left px-4 py-3">Organization</th>
+
                 <th className="text-left px-4 py-3">Action</th>
-                <th className="text-left px-4 py-3">Target</th>
+                <th className="text-left px-4 py-3">User</th>
               </tr>
             </thead>
             <tbody>
-              {logs.map((log, i) => (
+              {result?.map((log, i) => (
                 <tr key={i} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    {new Date(log.timestamp).toLocaleString()}
+                    {new Date(log.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3">{log.actor}</td>
-                  <td className="px-4 py-3">
-                    {orgMap[log.orgId] || "Unknown"}
+                  <td className="px-4 py-3">{log.name}</td>
+
+                  <td className="px-4 py-3 capitalize">
+                    {log.user?.firstName} {log?.user?.lastName}
                   </td>
-                  <td className="px-4 py-3">{log.action}</td>
-                  <td className="px-4 py-3">{log.target}</td>
                 </tr>
               ))}
             </tbody>
