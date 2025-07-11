@@ -1,40 +1,59 @@
 "use client";
 
-import React, { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { Input } from "@/components/Input";
+import { usePost } from "@/hooks/usePost";
+import { url } from "@/hooks/lib";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import z from "zod";
+import { ImSpinner10 } from "react-icons/im";
 
-export default function CreateOrganization({ setShowModal, setOrgs }) {
-  const [newOrgName, setNewOrgName] = useState("");
+const schema = z.object({
+  name: z.string().min(1, { message: "Organization name is required" }).trim(),
+});
 
-  const handleCreateOrganization = (e) => {
-    e.preventDefault();
-    if (!newOrgName.trim()) return;
+export default function CreateOrganization({ setShowModal }) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
 
-    const newOrg = {
-      id: uuidv4(),
-      name: newOrgName,
-      createdAt: new Date().toISOString(),
-      employees: [],
-    };
-
-    setOrgs((prev) => [...prev, newOrg]);
-    setNewOrgName("");
+  const handleSuccess = async (data) => {
+    toast.success("Organization created");
+    reset();
     setShowModal(false);
+  };
+
+  const createHandler = usePost({
+    url: `${url}/v1/organizations`,
+    queryKey: "organizations",
+    title: "Organization created",
+    onSuccess: handleSuccess,
+  });
+
+  const onSubmit = (data) => {
+    createHandler.mutate(data);
   };
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
         <h2 className="text-xl font-bold mb-4">Create New Organization</h2>
-        <form onSubmit={handleCreateOrganization}>
-          <input
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Input
             type="text"
-            className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Organization name"
-            value={newOrgName}
-            onChange={(e) => setNewOrgName(e.target.value)}
-            required
+            register={register}
+            name="name"
+            info={errors.name?.message ? errors.name.message : null}
           />
+
           <div className="flex justify-end space-x-3">
             <button
               type="button"
@@ -43,9 +62,15 @@ export default function CreateOrganization({ setShowModal, setOrgs }) {
               Cancel
             </button>
             <button
+              disabled={createHandler.isPending}
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              Create
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 cursor-pointer text-white rounded hover:bg-blue-700">
+              Create{" "}
+              {createHandler.isPending && (
+                <span className="animate-spin">
+                  <ImSpinner10 />
+                </span>
+              )}
             </button>
           </div>
         </form>

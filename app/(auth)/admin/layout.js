@@ -1,8 +1,11 @@
 "use client";
 
+import { url } from "@/hooks/lib";
+import useGet from "@/hooks/useGet";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect } from "react";
+import { FaSpinner } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 
 const navLinks = [
@@ -15,13 +18,20 @@ export default function Layout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const { data, isPending } = useGet(`${url}/v1/user`, "profile");
+
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (!user) return router.replace("/login");
-    const parsedUser = JSON.parse(user);
-    if (parsedUser?.role !== "superadmin")
+    if (isPending) return;
+    if (data?.data?.userType !== "admin")
       return router.replace("/organization");
-  }, [router]);
+  }, [data?.data, router, isPending]);
+
+  if (isPending)
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <FaSpinner className="animate-spin" />
+      </div>
+    );
 
   return (
     <div className="min-h-screen flex">
